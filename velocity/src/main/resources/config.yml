@@ -1,0 +1,9 @@
+kick-message:
+  global: '<red>Use our IP example.com or go home'
+  special: '<red>Error'
+hostname:
+  global:
+    - 'example.com'
+    - 'play.example.com'
+  special:
+    Notch: 'notch.example.com'

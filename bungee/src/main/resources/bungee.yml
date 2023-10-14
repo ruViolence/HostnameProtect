@@ -1,0 +1,3 @@
+name: HostnameProtect
+main: ru.violence.hostnameprotect.bungee.HostnameProtectBungee
+version: ${project.version}
