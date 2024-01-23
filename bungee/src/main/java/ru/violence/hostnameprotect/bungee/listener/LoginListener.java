@@ -7,22 +7,11 @@ import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 import ru.violence.hostnameprotect.bungee.HostnameProtectBungee;
 
-import java.util.Map;
-import java.util.Set;
-
 public class LoginListener implements Listener {
     private final HostnameProtectBungee plugin;
-    private final String kickMessageGlobal;
-    private final String kickMessageSpecial;
-    private final Set<String> globalHostnames;
-    private final Map<String, String> specialHostnames;
 
-    public LoginListener(HostnameProtectBungee plugin, String kickMessageGlobal, String kickMessageSpecial, Set<String> globalHostnames, Map<String, String> specialHostnames) {
+    public LoginListener(HostnameProtectBungee plugin) {
         this.plugin = plugin;
-        this.kickMessageGlobal = kickMessageGlobal;
-        this.kickMessageSpecial = kickMessageSpecial;
-        this.globalHostnames = globalHostnames;
-        this.specialHostnames = specialHostnames;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -32,19 +21,19 @@ public class LoginListener implements Listener {
         String playerName = event.getConnection().getName();
         String hostname = event.getConnection().getVirtualHost().getHostName().toLowerCase();
 
-        String special = specialHostnames.get(playerName.toLowerCase());
+        String special = plugin.getSpecialHostnames().get(playerName.toLowerCase());
         if (special != null) {
             if (!special.equals(hostname)) {
                 event.setCancelled(true);
-                event.setCancelReason(TextComponent.fromLegacyText(kickMessageSpecial));
+                event.setCancelReason(TextComponent.fromLegacyText(plugin.getKickMessageSpecial()));
                 plugin.getLogger().warning(playerName + " tried to log in not through the special hostname \"" + hostname + "\"");
             }
             return;
         }
 
-        if (!globalHostnames.contains(hostname)) {
+        if (!plugin.getGlobalHostnames().contains(hostname)) {
             event.setCancelled(true);
-            event.setCancelReason(TextComponent.fromLegacyText(kickMessageGlobal));
+            event.setCancelReason(TextComponent.fromLegacyText(plugin.getKickMessageGlobal()));
             plugin.getLogger().warning(playerName + " tried to log in through the third-party hostname \"" + hostname + "\"");
         }
     }

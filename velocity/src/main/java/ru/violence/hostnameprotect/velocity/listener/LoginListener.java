@@ -6,42 +6,31 @@ import com.velocitypowered.api.event.connection.PreLoginEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import ru.violence.hostnameprotect.velocity.HostnameProtectVelocity;
 
-import java.util.Map;
-import java.util.Set;
-
 public class LoginListener {
     private final HostnameProtectVelocity plugin;
-    private final String kickMessageGlobal;
-    private final String kickMessageSpecial;
-    private final Set<String> globalHostnames;
-    private final Map<String, String> specialHostnames;
 
-    public LoginListener(HostnameProtectVelocity plugin, String kickMessageGlobal, String kickMessageSpecial, Set<String> globalHostnames, Map<String, String> specialHostnames) {
+    public LoginListener(HostnameProtectVelocity plugin) {
         this.plugin = plugin;
-        this.kickMessageGlobal = kickMessageGlobal;
-        this.kickMessageSpecial = kickMessageSpecial;
-        this.globalHostnames = globalHostnames;
-        this.specialHostnames = specialHostnames;
     }
 
-    @Subscribe(order = PostOrder.FIRST)
+    @Subscribe(order = PostOrder.NORMAL)
     public void onPreLogin(PreLoginEvent event) {
         if (!event.getResult().isAllowed()) return;
 
         String playerName = event.getUsername();
         String hostname = event.getConnection().getRemoteAddress().getHostName().toLowerCase();
 
-        String special = specialHostnames.get(playerName.toLowerCase());
+        String special = plugin.getSpecialHostnames().get(playerName.toLowerCase());
         if (special != null) {
             if (!special.equals(hostname)) {
-                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(MiniMessage.miniMessage().deserialize(kickMessageSpecial)));
+                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(MiniMessage.miniMessage().deserialize(plugin.getKickMessageSpecial())));
                 plugin.getLogger().warn(playerName + " tried to log in not through the special hostname \"" + hostname + "\"");
             }
             return;
         }
 
-        if (!globalHostnames.contains(hostname)) {
-            event.setResult(PreLoginEvent.PreLoginComponentResult.denied(MiniMessage.miniMessage().deserialize(kickMessageGlobal)));
+        if (!plugin.getGlobalHostnames().contains(hostname)) {
+            event.setResult(PreLoginEvent.PreLoginComponentResult.denied(MiniMessage.miniMessage().deserialize(plugin.getKickMessageGlobal())));
             plugin.getLogger().warn(playerName + " tried to log in through the third-party hostname \"" + hostname + "\"");
         }
     }

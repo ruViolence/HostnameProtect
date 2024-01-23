@@ -1,18 +1,19 @@
 package ru.violence.hostnameprotect.velocity;
 
-import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import io.leangen.geantyref.TypeToken;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.CommentedConfigurationNode;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+import ru.violence.hostnameprotect.velocity.command.HostnameProtectCommand;
 import ru.violence.hostnameprotect.velocity.listener.LoginListener;
 
 import java.io.File;
@@ -31,6 +32,11 @@ public class HostnameProtectVelocity {
     private final @Getter Logger logger;
     private final File dataFolder;
 
+    private @Getter String kickMessageGlobal;
+    private @Getter String kickMessageSpecial;
+    private @Getter Set<String> globalHostnames;
+    private @Getter Map<String, String> specialHostnames;
+
     @Inject
     public HostnameProtectVelocity(ProxyServer proxy, Logger logger, @DataDirectory Path dataFolder) {
         this.proxy = proxy;
@@ -38,18 +44,23 @@ public class HostnameProtectVelocity {
         this.dataFolder = dataFolder.toFile();
     }
 
-    @SneakyThrows
     @Subscribe
     public void onProxyInit(ProxyInitializeEvent event) {
+        reloadConfig();
+
+        proxy.getCommandManager().register("hostnameprotect", new HostnameProtectCommand(this));
+        proxy.getEventManager().register(this, new LoginListener(this));
+    }
+
+    @SneakyThrows
+    public void reloadConfig() {
         extractDefaultConfig();
-        ConfigurationNode config = YAMLConfigurationLoader.builder().setFile(new File(dataFolder, "config.yml")).build().load();
+        CommentedConfigurationNode config = YamlConfigurationLoader.builder().file(new File(dataFolder, "config.yml")).build().load();
 
-        String kickMessageGlobal = config.getNode("kick-message", "global").getString();
-        String kickMessageSpecial = config.getNode("kick-message", "special").getString();
-        Set<String> globalHostnames = new HashSet<>(config.getNode("kick-message", "global").getList(TypeToken.of(String.class)));
-        Map<String, String> specialHostnames = loadSpecialHostnames(config);
-
-        proxy.getEventManager().register(this, new LoginListener(this, kickMessageGlobal, kickMessageSpecial, globalHostnames, specialHostnames));
+        kickMessageGlobal = config.node("kick-message", "global").getString();
+        kickMessageSpecial = config.node("kick-message", "special").getString();
+        globalHostnames = new HashSet<>(config.node("kick-message", "global").getList(TypeToken.get(String.class)));
+        specialHostnames = loadSpecialHostnames(config);
     }
 
     @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
@@ -64,14 +75,13 @@ public class HostnameProtectVelocity {
         }
     }
 
-    private @NotNull Map<String, String> loadSpecialHostnames(@NotNull ConfigurationNode config) {
+    private @NotNull Map<String, String> loadSpecialHostnames(@NotNull CommentedConfigurationNode config) {
         Map<String, String> map = new HashMap<>();
 
-        for (Map.Entry<Object, ? extends ConfigurationNode> entry : config.getNode("hostname", "special").getChildrenMap().entrySet()) {
+        for (Map.Entry<Object, ? extends CommentedConfigurationNode> entry : config.node("hostname", "special").childrenMap().entrySet()) {
             map.put(entry.getKey().toString().toLowerCase(), entry.getValue().getString());
         }
 
         return map;
     }
-
 }

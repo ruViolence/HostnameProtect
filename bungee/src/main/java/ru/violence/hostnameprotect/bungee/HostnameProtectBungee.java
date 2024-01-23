@@ -1,10 +1,12 @@
 package ru.violence.hostnameprotect.bungee;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
+import ru.violence.hostnameprotect.bungee.command.HostnameProtectCommand;
 import ru.violence.hostnameprotect.bungee.listener.LoginListener;
 
 import java.io.File;
@@ -13,23 +15,32 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class HostnameProtectBungee extends Plugin {
-    @SneakyThrows
+    private @Getter String kickMessageGlobal;
+    private @Getter String kickMessageSpecial;
+    private @Getter Set<String> globalHostnames;
+    private @Getter Map<String, String> specialHostnames;
+
     @Override
     public void onEnable() {
+        reloadConfig();
+
+        getProxy().getPluginManager().registerCommand(this, new HostnameProtectCommand(this));
+        getProxy().getPluginManager().registerListener(this, new LoginListener(this));
+    }
+
+    @SneakyThrows
+    public void reloadConfig() {
         extractDefaultConfig();
         Configuration config = YamlConfiguration.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
 
-        String kickMessageGlobal = config.getString("kick-message.global");
-        String kickMessageSpecial = config.getString("kick-message.special");
-        Set<String> globalHostnames = new HashSet<>(config.getStringList("hostname.global"));
-        Map<String, String> specialHostnames = loadSpecialHostnames(config);
-
-        getProxy().getPluginManager().registerListener(this, new LoginListener(this, kickMessageGlobal, kickMessageSpecial, globalHostnames, specialHostnames));
+        kickMessageGlobal = config.getString("kick-message.global");
+        kickMessageSpecial = config.getString("kick-message.special");
+        globalHostnames = new HashSet<>(config.getStringList("hostname.global"));
+        specialHostnames = loadSpecialHostnames(config);
     }
 
     @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
