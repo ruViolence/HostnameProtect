@@ -59,7 +59,7 @@ public class HostnameProtectVelocity {
 
         kickMessageGlobal = config.node("kick-message", "global").getString();
         kickMessageSpecial = config.node("kick-message", "special").getString();
-        globalHostnames = new HashSet<>(config.node("kick-message", "global").getList(TypeToken.get(String.class)));
+        globalHostnames = new HashSet<>(config.node("hostname", "global").getList(TypeToken.get(String.class)));
         specialHostnames = loadSpecialHostnames(config);
     }
 
