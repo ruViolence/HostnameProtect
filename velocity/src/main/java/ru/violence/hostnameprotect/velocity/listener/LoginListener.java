@@ -3,8 +3,12 @@ package ru.violence.hostnameprotect.velocity.listener;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import ru.violence.hostnameprotect.velocity.HostnameProtectVelocity;
+
+import java.net.InetSocketAddress;
 
 public class LoginListener {
     private final HostnameProtectVelocity plugin;
@@ -18,7 +22,13 @@ public class LoginListener {
         if (!event.getResult().isAllowed()) return;
 
         String playerName = event.getUsername();
-        String hostname = event.getConnection().getRemoteAddress().getHostName().toLowerCase();
+        InetSocketAddress inetSocketAddress = event.getConnection().getVirtualHost().orElse(null);
+        if (inetSocketAddress == null) {
+            event.setResult(PreLoginEvent.PreLoginComponentResult.denied(Component.text("Can't get IP", NamedTextColor.RED)));
+            return;
+        }
+        
+        String hostname = inetSocketAddress.getHostName().toLowerCase();
 
         String special = plugin.getSpecialHostnames().get(playerName.toLowerCase());
         if (special != null) {
