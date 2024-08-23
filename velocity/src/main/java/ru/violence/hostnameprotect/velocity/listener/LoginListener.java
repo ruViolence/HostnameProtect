@@ -42,6 +42,9 @@ public class LoginListener {
         if (!plugin.getGlobalHostnames().contains(hostname)) {
             event.setResult(PreLoginEvent.PreLoginComponentResult.denied(MiniMessage.miniMessage().deserialize(plugin.getKickMessageGlobal())));
             plugin.getLogger().warn(playerName + " tried to log in through the third-party hostname \"" + hostname + "\"");
+            return;
         }
+        
+        plugin.getLogger().info(playerName + " logged in through the hostname \"" + hostname + "\"");
     }
 }
